@@ -3,7 +3,7 @@
 > [!TIP]
 > This agent follows a **Fetch → Filter → Synthesize → Deliver** pipeline.
 
-# 🚀 Orbit AI  
+# 🚀 DeepSignal 
 ### Personalized AI-Powered Stock Intelligence Engine
 
 ![Node.js](https://img.shields.io/badge/Node.js-18+-green)
@@ -11,7 +11,7 @@
 ![AI Model](https://img.shields.io/badge/AI-Gemini%203.1%20Pro-orange)
 ![License](https://img.shields.io/badge/License-MIT-lightgrey)
 
-Orbit AI is a modular backend system that delivers **signal-to-noise investment intelligence** using AI.
+DeepSignal is a modular backend system that delivers **signal-to-noise investment intelligence** using AI.
 
 It mirrors the logic of high-end institutional research services by:
 
@@ -25,7 +25,7 @@ It mirrors the logic of high-end institutional research services by:
 
 # 🧠 System Overview
 
-Orbit AI follows a **Controller → Service → Agent** architecture.
+DeepSignal follows a **Controller → Service → Agent** architecture.
 
 This ensures:
 
