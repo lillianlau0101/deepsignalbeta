@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeepSignal — Your Personal Investment Analyst</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,800;1,400;1,600&family=Lora:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --paper: #f7f3ed; --paper-dark: #ede7db; --paper-mid: #e8e0d4;
+      --ink: #1a1510; --ink-mid: #3d3428; --ink-light: #7a6e5f; --ink-faint: #b5a99a;
+      --copper: #b8703a; --copper-light: #d4935d; --copper-pale: #f0dbc8;
+      --navy: #1c2b3a; --navy-mid: #2d4259; --gold-rule: #c9a66b;
+      --green-signal: #1e4d2b; --green-bg: #e8f5ec; --red-signal: #6b1a1a;
+      --x-blue: #1a8cd8; --x-bg: #e8f4fd;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--paper); color: var(--ink); font-family: 'Source Sans 3', sans-serif; overflow-x: hidden; }
+
+    /* ─── MASTHEAD ─── */
+    .masthead { background: var(--ink); border-bottom: 3px solid var(--gold-rule); }
+    .masthead-top { display: flex; justify-content: space-between; align-items: center; padding: 13px 60px; border-bottom: 1px solid #2d2820; }
+    .masthead-date { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-faint); letter-spacing: .5px; }
+    .masthead-tagline { font-family: 'Lora', serif; font-style: italic; font-size: 12px; color: var(--ink-faint); }
+    .masthead-cta { background: var(--copper); color: #fff; border: none; padding: 9px 22px; font-family: 'Source Sans 3', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: background .2s; text-decoration: none; }
+    .masthead-cta:hover { background: var(--copper-light); }
+    .masthead-main { padding: 26px 60px 20px; text-align: center; position: relative; }
+    .masthead-main::before, .masthead-main::after { content: ''; position: absolute; top: 50%; width: calc(50% - 270px); height: 1px; background: #2d2820; }
+    .masthead-main::before { left: 60px; } .masthead-main::after { right: 60px; }
+    .brand-name { font-family: 'Playfair Display', serif; font-size: 64px; font-weight: 800; color: var(--paper); letter-spacing: -1px; line-height: 1; }
+    .brand-name span { color: var(--copper); }
+    .brand-sub { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--gold-rule); margin-top: 6px; }
+
+    /* ─── TICKER ─── */
+    .ticker-bar { background: var(--copper); padding: 8px 0; overflow: hidden; }
+    .ticker-scroll { display: flex; width: max-content; animation: scroll-left 50s linear infinite; }
+    .ticker-item { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #fff; padding: 0 28px; white-space: nowrap; border-right: 1px solid rgba(255,255,255,.2); letter-spacing: .4px; }
+    .ticker-item .cat { font-weight: 500; margin-right: 6px; opacity: .7; }
+    .ticker-item .x-tag { background: rgba(255,255,255,.15); padding: 1px 5px; border-radius: 2px; font-size: 10px; margin-right: 5px; }
+    @keyframes scroll-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    /* ─── HERO ─── */
+    .hero { padding: 56px 60px 76px; background: var(--paper); position: relative; }
+    .hero::before { content: ''; position: absolute; top: 0; left: 60px; right: 60px; height: 2px; background: var(--ink); }
+    .hero-grid { display: grid; grid-template-columns: 1.55fr 1fr; gap: 0; }
+    .hero-main { padding-right: 48px; border-right: 1px solid var(--ink-faint); }
+    .hero-kicker { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--copper); margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+    .hero-kicker::after { content: ''; flex: 1; height: 1px; background: var(--copper); opacity: .4; }
+    h1.hero-headline { font-family: 'Playfair Display', serif; font-size: clamp(40px,4.2vw,62px); font-weight: 800; line-height: 1.06; color: var(--ink); margin-bottom: 20px; }
+    h1.hero-headline em { font-style: italic; color: var(--copper); }
+    .hero-deck { font-family: 'Lora', serif; font-size: 17px; line-height: 1.65; color: var(--ink-mid); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 15px 0; margin-bottom: 26px; }
+    .hero-body { font-size: 15px; line-height: 1.75; color: var(--ink-mid); column-count: 2; column-gap: 28px; column-rule: 1px solid var(--paper-dark); margin-bottom: 30px; }
+    .hero-cta-row { display: flex; align-items: center; gap: 18px; padding-top: 22px; border-top: 2px solid var(--ink); flex-wrap: wrap; }
+    .btn-primary { background: var(--ink); color: var(--paper); border: none; padding: 14px 32px; font-family: 'Source Sans 3', sans-serif; font-weight: 600; font-size: 14px; letter-spacing: .5px; cursor: pointer; transition: all .2s; text-decoration: none; display: inline-block; }
+    .btn-primary:hover { background: var(--navy); transform: translateY(-1px); }
+    .btn-secondary { background: transparent; color: var(--ink); border: 1.5px solid var(--ink); padding: 13px 22px; font-family: 'Source Sans 3', sans-serif; font-weight: 500; font-size: 14px; cursor: pointer; transition: all .2s; text-decoration: none; }
+    .btn-secondary:hover { background: var(--ink); color: var(--paper); }
+    .cta-note { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-light); }
+    .cta-note strong { color: var(--copper); }
+
+    /* ─── SIDEBAR / BRIEF MOCKUP ─── */
+    .hero-sidebar { padding-left: 38px; display: flex; flex-direction: column; gap: 16px; }
+    .sidebar-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--ink-light); padding-bottom: 8px; border-bottom: 2px solid var(--ink); }
+
+    /* Digest frequency tabs */
+    .freq-tabs { display: flex; gap: 2px; background: var(--ink); padding: 3px; }
+    .freq-tab { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; padding: 6px 12px; color: var(--ink-faint); cursor: pointer; transition: all .15s; border: none; background: transparent; }
+    .freq-tab.active { background: var(--copper); color: #fff; }
+
+    .brief-mockup { border: 1px solid var(--ink-faint); background: #fff; box-shadow: 3px 3px 0 var(--ink-faint); }
+    .brief-header { background: var(--ink); color: var(--paper); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; }
+    .brief-header-title { font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 600; }
+    .brief-header-meta { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--ink-faint); }
+    .brief-body { padding: 12px; }
+    .brief-story { padding: 9px 0; border-bottom: 1px solid var(--paper-dark); }
+    .brief-story:last-child { border-bottom: none; padding-bottom: 0; }
+    .brief-tag { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; padding: 2px 6px; margin-bottom: 5px; display: inline-block; }
+    .brief-tag.earnings { background: var(--copper-pale); color: var(--copper); }
+    .brief-tag.fed { background: #e0e8f0; color: var(--navy); }
+    .brief-tag.x-tweet { background: var(--x-bg); color: var(--x-blue); }
+    .brief-tag.sector { background: #e8f0e4; color: var(--green-signal); }
+    .brief-tag.global { background: #f0e8e0; color: #6b3a1a; }
+    .brief-tag.macro { background: #ece8f0; color: #3d1a6b; }
+    .brief-tag.informal { background: #f5f0ff; color: #5a1ab8; }
+    .brief-story-head { font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 600; color: var(--ink); line-height: 1.3; margin-bottom: 3px; }
+    .brief-story-body { font-size: 11px; color: var(--ink-light); line-height: 1.5; }
+    .x-attribution { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--x-blue); margin-bottom: 3px; }
+    .brief-story-signal { font-family: 'IBM Plex Mono', monospace; font-size: 10px; margin-top: 5px; padding: 2px 8px; display: inline-block; }
+    .signal-bull { background: var(--green-bg); color: var(--green-signal); }
+    .signal-watch { background: #fdf3e6; color: #8b5a00; }
+    .signal-bear { background: #fde8e8; color: var(--red-signal); }
+    .signal-info { background: var(--x-bg); color: var(--x-blue); }
+
+    /* Bookmark button */
+    .brief-story-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
+    .bookmark-btn { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--ink-faint); border: 1px solid var(--ink-faint); padding: 2px 7px; cursor: pointer; background: none; transition: all .15s; }
+    .bookmark-btn:hover { border-color: var(--copper); color: var(--copper); }
+
+    .stats-box { border: 1px solid var(--ink); padding: 14px; background: var(--paper-dark); }
+    .stats-box-title { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-light); margin-bottom: 10px; }
+    .stat-row { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; border-bottom: 1px solid var(--ink-faint); }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-label { font-size: 12px; color: var(--ink-mid); }
+    .stat-val { font-family: 'Playfair Display', serif; font-size: 19px; font-weight: 700; color: var(--copper); }
+
+    /* ─── X / TWITTER SECTION ─── */
+    .x-section { background: var(--navy); padding: 100px 60px; position: relative; overflow: hidden; }
+    .x-section::before { content: '𝕏'; position: absolute; right: 40px; top: 40px; font-size: 320px; color: rgba(255,255,255,.025); line-height: 1; pointer-events: none; font-weight: 900; }
+    .x-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 72px; align-items: center; }
+    .x-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--x-blue); margin-bottom: 14px; }
+    .x-headline { font-family: 'Playfair Display', serif; font-size: clamp(30px,3.2vw,46px); font-weight: 700; color: var(--paper); line-height: 1.15; margin-bottom: 20px; }
+    .x-headline em { font-style: italic; color: var(--copper-light); }
+    .x-body { font-size: 15px; line-height: 1.75; color: #9a8f82; }
+    .x-body p + p { margin-top: 14px; }
+
+    /* Source pack cards */
+    .source-packs { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin-top: 24px; }
+    .pack-card { background: #141c24; padding: 16px 18px; border-left: 2px solid transparent; transition: border-color .2s; }
+    .pack-card:hover { border-left-color: var(--copper); }
+    .pack-title { font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 600; color: var(--paper); margin-bottom: 4px; }
+    .pack-meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #5a7080; }
+    .pack-handles { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
+    .pack-handle { font-family: 'IBM Plex Mono', monospace; font-size: 9px; padding: 2px 6px; background: rgba(26,140,216,.12); color: var(--x-blue); border: 1px solid rgba(26,140,216,.2); }
+
+    /* Tweet feed mockup */
+    .tweet-feed { display: flex; flex-direction: column; gap: 2px; }
+    .tweet-card { background: #111820; padding: 16px; border-bottom: 1px solid #1e2830; transition: background .2s; }
+    .tweet-card:hover { background: #16202a; }
+    .tweet-card:last-child { border-bottom: none; }
+    .tweet-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .tweet-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--navy-mid); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--paper); flex-shrink: 0; font-family: 'Playfair Display', serif; }
+    .tweet-name { font-size: 13px; font-weight: 600; color: var(--paper); }
+    .tweet-handle { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #5a7080; }
+    .tweet-time { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #3a5060; margin-left: auto; }
+    .tweet-body { font-size: 13px; line-height: 1.6; color: #9ab0be; }
+    .tweet-body .ticker-mention { color: var(--x-blue); font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+    .tweet-signal { font-family: 'IBM Plex Mono', monospace; font-size: 9px; margin-top: 8px; padding: 3px 8px; display: inline-block; background: rgba(26,140,216,.1); color: var(--x-blue); border: 1px solid rgba(26,140,216,.2); }
+    .tweet-signal.mapped { background: rgba(30,77,43,.2); color: #4a9e6a; border-color: rgba(74,158,106,.3); }
+
+    /* ─── THE PROBLEM / RITUAL ─── */
+    .ritual-section { background: var(--ink); padding: 100px 60px; position: relative; overflow: hidden; }
+    .ritual-section::before { content: '"'; position: absolute; top: -40px; left: 40px; font-family: 'Playfair Display', serif; font-size: 380px; color: rgba(255,255,255,.025); line-height: 1; pointer-events: none; }
+    .ritual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: center; }
+    .ritual-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--copper-light); margin-bottom: 16px; }
+    .ritual-headline { font-family: 'Playfair Display', serif; font-size: clamp(30px,3.2vw,46px); font-weight: 700; color: var(--paper); line-height: 1.2; margin-bottom: 20px; }
+    .ritual-headline em { font-style: italic; color: var(--copper-light); }
+    .ritual-body { font-size: 15px; line-height: 1.75; color: #9a8f82; }
+    .ritual-body p + p { margin-top: 14px; }
+    .before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+    .ba-col { padding: 26px 22px; }
+    .ba-col.before { background: #111820; }
+    .ba-col.after { background: #1e3a28; }
+    .ba-title { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+    .ba-col.before .ba-title { color: #6a5f52; }
+    .ba-col.after .ba-title { color: #4a9e6a; }
+    .ba-item { font-size: 13px; line-height: 1.5; padding: 6px 0; display: flex; align-items: flex-start; gap: 8px; border-bottom: 1px solid rgba(255,255,255,.05); color: #7a6e60; }
+    .ba-col.after .ba-item { color: #9ac8aa; }
+    .ba-item::before { content: '—'; flex-shrink: 0; }
+    .ba-col.after .ba-item::before { content: '✓'; color: #4a9e6a; }
+
+    /* ─── COVERAGE GRID ─── */
+    .coverage-section { padding: 96px 60px; background: var(--paper); border-top: 3px double var(--gold-rule); }
+    .section-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--copper); margin-bottom: 12px; }
+    .section-title { font-family: 'Playfair Display', serif; font-size: clamp(30px,3.2vw,44px); font-weight: 700; color: var(--ink); line-height: 1.15; margin-bottom: 8px; }
+    .section-deck { font-family: 'Lora', serif; font-style: italic; font-size: 16px; color: var(--ink-light); margin-bottom: 52px; max-width: 580px; }
+    .coverage-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--ink-faint); }
+    .coverage-card { background: var(--paper); padding: 34px 30px; transition: background .2s; }
+    .coverage-card:hover { background: var(--paper-dark); }
+    .coverage-card.x-card { background: #f8fcff; }
+    .coverage-card.x-card:hover { background: #eef7ff; }
+    .coverage-card-icon { font-size: 22px; margin-bottom: 12px; }
+    .coverage-card-cat { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--copper); margin-bottom: 8px; }
+    .coverage-card.x-card .coverage-card-cat { color: var(--x-blue); }
+    .coverage-card-title { font-family: 'Playfair Display', serif; font-size: 19px; font-weight: 700; color: var(--ink); margin-bottom: 10px; line-height: 1.2; }
+    .coverage-card-desc { font-size: 14px; line-height: 1.65; color: var(--ink-light); }
+    .coverage-card-examples { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 5px; }
+    .example-chip { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 3px 8px; background: var(--paper-dark); color: var(--ink-mid); border: 1px solid var(--ink-faint); }
+    .example-chip.x-chip { background: var(--x-bg); color: var(--x-blue); border-color: rgba(26,140,216,.25); }
+
+    /* ─── DIGEST FREQUENCY ─── */
+    .digest-section { background: var(--paper-dark); padding: 96px 60px; border-top: 1px solid var(--ink-faint); }
+    .digest-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--ink-faint); margin-top: 52px; }
+    .digest-card { background: var(--paper-dark); padding: 32px 26px; transition: background .2s; }
+    .digest-card:hover { background: var(--paper); }
+    .digest-card.featured { background: var(--ink); }
+    .digest-card.featured:hover { background: var(--navy); }
+    .digest-freq { font-family: 'Bebas Neue', 'Playfair Display', serif; font-size: 42px; font-weight: 800; color: var(--copper); line-height: 1; margin-bottom: 6px; font-style: normal; }
+    .digest-card.featured .digest-freq { color: var(--copper-light); }
+    .digest-name { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--ink); margin-bottom: 10px; }
+    .digest-card.featured .digest-name { color: var(--paper); }
+    .digest-desc { font-size: 13px; line-height: 1.6; color: var(--ink-light); }
+    .digest-card.featured .digest-desc { color: #7a8f9a; }
+    .digest-when { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--copper); margin-top: 12px; letter-spacing: .5px; }
+    .digest-card.featured .digest-when { color: var(--copper-light); }
+
+    /* ─── PROCESS ─── */
+    .process-section { background: var(--paper); padding: 96px 60px; border-top: 3px double var(--gold-rule); }
+    .process-flow { margin-top: 56px; display: grid; grid-template-columns: repeat(5,1fr); position: relative; }
+    .process-flow::before { content: ''; position: absolute; top: 27px; left: 10%; right: 10%; height: 1px; background: var(--gold-rule); z-index: 0; }
+    .process-step { position: relative; z-index: 1; text-align: center; padding: 0 14px; }
+    .process-node { width: 54px; height: 54px; background: var(--ink); color: var(--paper); font-family: 'Playfair Display', serif; font-size: 21px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; position: relative; }
+    .process-node::after { content: ''; position: absolute; inset: 3px; border: 1px solid var(--gold-rule); pointer-events: none; }
+    .process-step-title { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 7px; }
+    .process-step-desc { font-size: 12px; color: var(--ink-light); line-height: 1.55; }
+    .process-step-tag { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--copper); margin-top: 8px; }
+
+    /* ─── PERSONALIZATION ─── */
+    .personal-section { background: var(--ink); padding: 96px 60px; color: var(--paper); }
+    .personal-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 72px; align-items: start; }
+    .personal-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--copper-light); margin-bottom: 12px; }
+    .personal-headline { font-family: 'Playfair Display', serif; font-size: clamp(28px,2.8vw,42px); font-weight: 700; line-height: 1.15; color: var(--paper); margin-bottom: 20px; }
+    .personal-headline em { font-style: italic; color: var(--copper-light); }
+    .personal-body { font-size: 15px; line-height: 1.75; color: #9a8f82; }
+    .personal-body p + p { margin-top: 14px; }
+
+    .pref-card { background: #111; border: 1px solid #2a2820; padding: 26px; }
+    .pref-card-title { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 600; color: var(--paper); margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #2a2820; }
+    .pref-section { margin-bottom: 18px; }
+    .pref-section-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--copper-light); margin-bottom: 9px; }
+    .pref-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+    .pref-tag { font-size: 12px; padding: 4px 10px; cursor: pointer; border: 1px solid; transition: all .15s; }
+    .pref-tag.active { background: var(--copper); border-color: var(--copper); color: #fff; }
+    .pref-tag.x-active { background: var(--x-blue); border-color: var(--x-blue); color: #fff; }
+    .pref-tag.inactive { background: transparent; border-color: #3a3025; color: var(--ink-faint); }
+    .pref-divider { height: 1px; background: #1e1a14; margin: 4px 0 14px; }
+    .pref-slider-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
+    .pref-slider-label { font-size: 12px; color: #7a6e60; }
+    .pref-slider-val { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--copper-light); }
+    .fake-slider { width: 100%; height: 2px; background: #2a2820; position: relative; margin-bottom: 14px; }
+    .fake-slider-fill { height: 100%; background: var(--copper); position: absolute; left: 0; }
+    .fake-slider-thumb { width: 10px; height: 10px; background: var(--copper); border-radius: 50%; position: absolute; top: -4px; }
+    .pref-brief-preview { background: #0d0c0a; border: 1px solid #2a2820; padding: 12px; margin-top: 6px; }
+    .pref-brief-preview-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold-rule); margin-bottom: 8px; }
+    .pref-brief-line { font-size: 12px; color: #7a6e60; line-height: 1.7; padding: 4px 0; border-bottom: 1px solid #1a1a14; display: flex; gap: 8px; align-items: baseline; }
+    .pref-brief-line:last-child { border-bottom: none; }
+    .pbl-tick { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--copper-light); flex-shrink: 0; }
+    .pbl-tick.x { color: var(--x-blue); }
+
+    /* ─── MARK / DEEP DIVE ─── */
+    .mark-section { background: var(--paper-dark); padding: 96px 60px; border-top: 1px solid var(--ink-faint); }
+    .mark-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 72px; align-items: center; }
+    .mark-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--copper); margin-bottom: 12px; }
+    .mark-headline { font-family: 'Playfair Display', serif; font-size: clamp(28px,2.8vw,42px); font-weight: 700; color: var(--ink); line-height: 1.15; margin-bottom: 16px; }
+    .mark-headline em { font-style: italic; color: var(--copper); }
+    .mark-body { font-size: 15px; line-height: 1.75; color: var(--ink-mid); }
+    .mark-body p + p { margin-top: 14px; }
+
+    .mark-mockup { background: #fff; border: 1px solid var(--ink-faint); box-shadow: 3px 3px 0 var(--ink-faint); }
+    .mark-mockup-header { background: var(--ink); padding: 10px 14px; display: flex; align-items: center; gap: 8px; }
+    .mark-mockup-title { font-family: 'Playfair Display', serif; font-size: 13px; color: var(--paper); font-weight: 600; }
+    .mark-mockup-count { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--copper-light); margin-left: auto; }
+    .mark-item { padding: 12px 14px; border-bottom: 1px solid var(--paper-dark); display: flex; gap: 12px; align-items: flex-start; }
+    .mark-item:last-child { border-bottom: none; }
+    .mark-icon { font-size: 14px; flex-shrink: 0; margin-top: 2px; }
+    .mark-item-title { font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 2px; line-height: 1.3; }
+    .mark-item-meta { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--ink-faint); }
+    .mark-item-analysis { font-size: 11px; color: var(--ink-light); margin-top: 5px; line-height: 1.5; font-style: italic; }
+    .dive-badge { font-family: 'IBM Plex Mono', monospace; font-size: 9px; padding: 2px 7px; background: var(--copper-pale); color: var(--copper); margin-left: auto; flex-shrink: 0; }
+
+    /* ─── TESTIMONIALS ─── */
+    .testimony-section { background: var(--paper); padding: 96px 60px; border-top: 3px double var(--gold-rule); }
+    .testimony-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--ink-faint); margin-top: 52px; }
+    .testimony { background: var(--paper); padding: 34px 30px; transition: background .2s; }
+    .testimony:hover { background: var(--paper-dark); }
+    .testimony-mark { font-family: 'Playfair Display', serif; font-size: 44px; color: var(--copper); line-height: .8; margin-bottom: 14px; opacity: .6; }
+    .testimony-quote { font-family: 'Lora', serif; font-style: italic; font-size: 15px; line-height: 1.7; color: var(--ink-mid); margin-bottom: 18px; }
+    .testimony-rule { height: 1px; background: var(--ink-faint); margin-bottom: 12px; }
+    .testimony-meta strong { font-size: 13px; font-weight: 600; color: var(--ink); display: block; }
+    .testimony-meta span { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--ink-light); }
+
+    /* ─── PRICING ─── */
+    .pricing-section { padding: 96px 60px; background: var(--paper-dark); border-top: 1px solid var(--ink-faint); }
+    .pricing-cards { display: grid; grid-template-columns: 1fr 1fr; max-width: 740px; gap: 2px; background: var(--ink); box-shadow: 6px 6px 0 var(--ink-faint); margin-top: 48px; }
+    .price-card { background: var(--paper); padding: 42px 38px; }
+    .price-card.featured { background: var(--navy); color: var(--paper); }
+    .price-period-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--copper); margin-bottom: 14px; display: block; }
+    .price-card.featured .price-period-label { color: var(--copper-light); }
+    .price-amount { font-family: 'Playfair Display', serif; font-weight: 800; font-size: 70px; line-height: 1; color: var(--ink); display: flex; align-items: flex-start; gap: 2px; }
+    .price-card.featured .price-amount { color: var(--paper); }
+    .price-amount .dollar { font-size: 30px; margin-top: 10px; color: var(--copper); }
+    .price-card.featured .price-amount .dollar { color: var(--copper-light); }
+    .price-sub-label { font-size: 13px; color: var(--ink-light); font-family: 'IBM Plex Mono', monospace; margin-bottom: 26px; margin-top: 4px; }
+    .price-card.featured .price-sub-label { color: #6a8ea0; }
+    .price-divider { height: 1px; background: var(--ink-faint); margin-bottom: 22px; }
+    .price-card.featured .price-divider { background: #2d4259; }
+    .price-features { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+    .price-features li { font-size: 14px; color: var(--ink-mid); display: flex; align-items: flex-start; gap: 10px; line-height: 1.45; }
+    .price-card.featured .price-features li { color: #9ab0be; }
+    .price-features li::before { content: '—'; font-family: 'IBM Plex Mono', monospace; color: var(--copper); flex-shrink: 0; font-size: 12px; margin-top: 1px; }
+    .pricing-footer { max-width: 740px; margin-top: 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
+    .pricing-footer-note { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-light); }
+
+    /* ─── FOOTER ─── */
+    footer { background: var(--ink); padding: 48px 60px; border-top: 3px solid var(--gold-rule); }
+    .footer-inner { display: grid; grid-template-columns: 1.5fr 1fr; gap: 60px; align-items: start; }
+    .footer-brand { font-family: 'Playfair Display', serif; font-size: 30px; font-weight: 800; color: var(--paper); }
+    .footer-brand span { color: var(--copper); }
+    .footer-tagline { font-family: 'Lora', serif; font-style: italic; font-size: 14px; color: var(--ink-faint); margin-top: 5px; margin-bottom: 18px; }
+    .footer-disc { font-size: 11px; color: #3d3428; line-height: 1.65; max-width: 420px; }
+    .footer-powered { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #3a3028; margin-top: 12px; }
+    .footer-powered a { color: #5a5040; text-decoration: none; }
+    .footer-links { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+    .footer-link { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-light); text-decoration: none; letter-spacing: 1px; text-transform: uppercase; transition: color .15s; }
+    .footer-link:hover { color: var(--copper-light); }
+    .footer-copy { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #2d2820; margin-top: 28px; padding-top: 18px; border-top: 1px solid #1e1a14; }
+
+    /* ─── ANIMATIONS ─── */
+    .fade-up { opacity: 0; transform: translateY(22px); transition: opacity .6s ease, transform .6s ease; }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 960px) {
+      .masthead-top, .masthead-main { padding: 12px 24px; }
+      .masthead-tagline { display: none; }
+      .masthead-main::before, .masthead-main::after { display: none; }
+      .hero, .x-section, .ritual-section, .coverage-section, .digest-section,
+      .process-section, .personal-section, .mark-section,
+      .testimony-section, .pricing-section { padding: 60px 24px; }
+      .hero-grid, .x-grid, .ritual-grid, .personal-grid, .mark-grid, .footer-inner { grid-template-columns: 1fr; }
+      .hero-main { padding-right: 0; border-right: none; border-bottom: 1px solid var(--ink-faint); padding-bottom: 36px; }
+      .hero-sidebar { padding-left: 0; padding-top: 36px; }
+      .hero-body { column-count: 1; }
+      .coverage-grid { grid-template-columns: 1fr 1fr; }
+      .digest-grid { grid-template-columns: 1fr 1fr; }
+      .process-flow { grid-template-columns: 1fr; gap: 28px; }
+      .process-flow::before { display: none; }
+      .pricing-cards { grid-template-columns: 1fr; max-width: 400px; }
+      .testimony-grid { grid-template-columns: 1fr; }
+      .before-after { grid-template-columns: 1fr; }
+      .source-packs { grid-template-columns: 1fr; }
+      footer { padding: 44px 24px; }
+      .footer-inner { grid-template-columns: 1fr; }
+      .footer-links { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ MASTHEAD ═══ -->
+<header class="masthead">
+  <div class="masthead-top">
+    <div class="masthead-date" id="live-date">Monday, February 23, 2026</div>
+    <div class="masthead-tagline">The private analyst in every investor's pocket</div>
+    <a class="masthead-cta" href="#pricing">Start for $1</a>
+  </div>
+  <div class="masthead-main">
+    <div class="brand-name">Deep<span>Signal</span></div>
+    <div class="brand-sub">Personalized AI Investment Intelligence · Powered by ClawFeed</div>
+  </div>
+</header>
+
+<!-- ═══ LIVE TICKER ═══ -->
+<div class="ticker-bar">
+  <div class="ticker-scroll">
+    <span class="ticker-item"><span class="cat">EARNINGS:</span> NVDA beats by 8% — data centre demand record high</span>
+    <span class="ticker-item"><span class="x-tag">𝕏</span> <span class="cat">@karpathy:</span> "Blackwell is a generational leap in compute density"</span>
+    <span class="ticker-item"><span class="cat">FED:</span> Powell signals two cuts H2 2026 — risk-on supported</span>
+    <span class="ticker-item"><span class="x-tag">𝕏</span> <span class="cat">@chamath:</span> "Rate pivot + AI capex = best setup since 2009"</span>
+    <span class="ticker-item"><span class="cat">MACRO:</span> Core PCE 2.4% — inflation narrative shifting</span>
+    <span class="ticker-item"><span class="x-tag">𝕏</span> <span class="cat">@elonmusk:</span> "Tesla FSD v13 deployment ahead of schedule"</span>
+    <span class="ticker-item"><span class="cat">SECTOR:</span> Semiconductor upcycle — SOX +12% YTD</span>
+    <span class="ticker-item"><span class="x-tag">𝕏</span> <span class="cat">@BillGurley:</span> "AI infra buildout is underpriced by the market"</span>
+    <span class="ticker-item"><span class="cat">GLOBAL:</span> ECB holds — EUR/USD stabilises at 1.08</span>
+    <span class="ticker-item"><span class="x-tag">𝕏</span> <span class="cat">@karpathy:</span> "Blackwell is a generational leap in compute density"</span>
+    <span class="ticker-item"><span class="cat">EARNINGS:</span> NVDA beats by 8% — data centre demand record high</span>
+    <span class="ticker-item"><span class="x-tag">𝕏</span> <span class="cat">@chamath:</span> "Rate pivot + AI capex = best setup since 2009"</span>
+    <span class="ticker-item"><span class="cat">FED:</span> Powell signals two cuts H2 2026 — risk-on supported</span>
+    <span class="ticker-item"><span class="x-tag">𝕏</span> <span class="cat">@elonmusk:</span> "Tesla FSD v13 deployment ahead of schedule"</span>
+    <span class="ticker-item"><span class="cat">MACRO:</span> Core PCE 2.4% — inflation narrative shifting</span>
+    <span class="ticker-item"><span class="x-tag">𝕏</span> <span class="cat">@BillGurley:</span> "AI infra buildout is underpriced by the market"</span>
+  </div>
+</div>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="hero-grid">
+
+    <div class="hero-main fade-up visible">
+      <div class="hero-kicker">Your morning brief — now with X/Twitter signal</div>
+      <h1 class="hero-headline">What if your newspaper <em>already knew</em> your portfolio — and followed the right people on X?</h1>
+      <p class="hero-deck">DeepSignal monitors financial news, earnings, Fed data, and sector intelligence — and now reads X/Twitter so you don't have to. Informal signals from the investors, analysts, and founders who move markets, filtered to what actually matters for your thesis.</p>
+      <p class="hero-body">Every morning, serious investors spend an hour scanning the FT, Bloomberg, earnings releases, and increasingly — X. Because the best market intelligence is no longer just in press releases. It's in the threads of @karpathy on AI chips, @chamath on rate cycles, and the CFO who just posted something unusual at 11pm. DeepSignal ingests all of it, maps it to your portfolio, and delivers one clean, reasoned brief before markets open.</p>
+      <div class="hero-cta-row">
+        <a class="btn-primary" href="#pricing">Begin your trial — $1</a>
+        <a class="btn-secondary" href="#x-signal">See X signal layer</a>
+        <div class="cta-note">Then <strong>$5/month</strong> · Cancel anytime</div>
+      </div>
+    </div>
+
+    <div class="hero-sidebar fade-up visible">
+      <div class="sidebar-label">Today's Brief — Sample</div>
+
+      <!-- Frequency tabs -->
+      <div class="freq-tabs">
+        <button class="freq-tab active">4H Brief</button>
+        <button class="freq-tab">Daily</button>
+        <button class="freq-tab">Weekly</button>
+        <button class="freq-tab">Monthly</button>
+      </div>
+
+      <div class="brief-mockup">
+        <div class="brief-header">
+          <div class="brief-header-title">Your Morning DeepSignal</div>
+          <div class="brief-header-meta">Mon Feb 23 · 6:47 AM</div>
+        </div>
+        <div class="brief-body">
+          <div class="brief-story">
+            <span class="brief-tag earnings">Earnings</span>
+            <div class="brief-story-head">NVDA posts record quarter; Blackwell demand exceeds all forecasts</div>
+            <div class="brief-story-body">Forward guidance implies 34% revenue growth. Your AI infrastructure thesis accelerating.</div>
+            <div class="brief-story-footer">
+              <div class="brief-story-signal signal-bull">▲ Bullish for your thesis</div>
+              <button class="bookmark-btn">📌 Mark</button>
+            </div>
+          </div>
+          <div class="brief-story">
+            <span class="brief-tag x-tweet">𝕏 X Signal</span>
+            <div class="x-attribution">@karpathy · 47K engagements</div>
+            <div class="brief-story-head">"Blackwell is a generational compute leap — the margin expansion story is just beginning"</div>
+            <div class="brief-story-body">Independent signal confirming your NVDA thesis from a trusted technical voice.</div>
+            <div class="brief-story-footer">
+              <div class="brief-story-signal signal-info">𝕏 Analyst conviction signal</div>
+              <button class="bookmark-btn">📌 Mark</button>
+            </div>
+          </div>
+          <div class="brief-story">
+            <span class="brief-tag fed">Fed Watch</span>
+            <div class="brief-story-head">Powell confirms gradual easing — two cuts signalled for H2</div>
+            <div class="brief-story-body">Rate-sensitive holdings (JPM) benefit. Long-duration tech multiples supported.</div>
+            <div class="brief-story-footer">
+              <div class="brief-story-signal signal-bull">▲ Macro tailwind</div>
+              <button class="bookmark-btn">📌 Mark</button>
+            </div>
+          </div>
+          <div class="brief-story" style="border-bottom:none;">
+            <span class="brief-tag x-tweet">𝕏 X Signal</span>
+            <div class="x-attribution">@chamath · 28K engagements</div>
+            <div class="brief-story-head">"Rate pivot + AI capex supercycle = best risk/reward since 2009 for growth"</div>
+            <div class="brief-story-body">Informal but high-signal. Aligns with your rate cycle + AI infrastructure thesis tags.</div>
+            <div class="brief-story-footer">
+              <div class="brief-story-signal signal-bull">▲ Thesis reinforcement</div>
+              <button class="bookmark-btn">📌 Mark</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-box">
+        <div class="stats-box-title">This brief at a glance</div>
+        <div class="stat-row"><span class="stat-label">Sources monitored</span><span class="stat-val">800+</span></div>
+        <div class="stat-row"><span class="stat-label">X/Twitter accounts</span><span class="stat-val">120+</span></div>
+        <div class="stat-row"><span class="stat-label">Stories filtered out</span><span class="stat-val">791</span></div>
+        <div class="stat-row"><span class="stat-label">Signals for you</span><span class="stat-val" style="color:var(--green-signal)">6</span></div>
+        <div class="stat-row" style="border-bottom:none;"><span class="stat-label">Reading time</span><span class="stat-val">90s</span></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══ X / TWITTER SIGNAL LAYER ═══ -->
+<section class="x-section" id="x-signal">
+  <div class="x-grid">
+
+    <div class="fade-up">
+      <div class="x-label">𝕏 X / Twitter Signal Layer — New</div>
+      <h2 class="x-headline">The smartest investors<br/>don't post press releases.<br/>They post on <em>X.</em></h2>
+      <div class="x-body">
+        <p>The most valuable market intelligence today isn't in the WSJ first. It's in a @karpathy thread about chip architecture, a CFO's late-night reply, a @chamath take on macro regimes, or an activist investor's cryptic signal before they file.</p>
+        <p>DeepSignal now monitors curated X/Twitter feeds — investors, analysts, founders, and central bankers — and surfaces only the posts with direct relevance to your portfolio, mapped to your thesis, filtered by engagement quality and source credibility.</p>
+        <p>Choose from pre-built Source Packs or build your own follow list. The AI does the reading; you get the signal.</p>
+      </div>
+      <div class="source-packs">
+        <div class="pack-card">
+          <div class="pack-title">AI & Tech Investors</div>
+          <div class="pack-meta">28 accounts · curated for growth investors</div>
+          <div class="pack-handles">
+            <span class="pack-handle">@karpathy</span>
+            <span class="pack-handle">@sama</span>
+            <span class="pack-handle">@chamath</span>
+            <span class="pack-handle">@BillGurley</span>
+            <span class="pack-handle">+24</span>
+          </div>
+        </div>
+        <div class="pack-card">
+          <div class="pack-title">Macro & Fed Watchers</div>
+          <div class="pack-meta">22 accounts · economists, strategists</div>
+          <div class="pack-handles">
+            <span class="pack-handle">@elonmusk</span>
+            <span class="pack-handle">@federalreserve</span>
+            <span class="pack-handle">@ErikVoneylen</span>
+            <span class="pack-handle">+19</span>
+          </div>
+        </div>
+        <div class="pack-card">
+          <div class="pack-title">Value & Deep Research</div>
+          <div class="pack-meta">18 accounts · fundamental investors</div>
+          <div class="pack-handles">
+            <span class="pack-handle">@BryanJung</span>
+            <span class="pack-handle">@IntrinsicValue</span>
+            <span class="pack-handle">@QualityCompound</span>
+            <span class="pack-handle">+15</span>
+          </div>
+        </div>
+        <div class="pack-card">
+          <div class="pack-title">CEO & Founder Signals</div>
+          <div class="pack-meta">32 accounts · executives worth tracking</div>
+          <div class="pack-handles">
+            <span class="pack-handle">@jensenhangman</span>
+            <span class="pack-handle">@satyanadella</span>
+            <span class="pack-handle">@tim_cook</span>
+            <span class="pack-handle">+29</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fade-up">
+      <div class="tweet-feed">
+        <div class="tweet-card">
+          <div class="tweet-header">
+            <div class="tweet-avatar">K</div>
+            <div>
+              <div class="tweet-name">Andrej Karpathy</div>
+              <div class="tweet-handle">@karpathy</div>
+            </div>
+            <div class="tweet-time">4h ago</div>
+          </div>
+          <div class="tweet-body">Blackwell architecture delivers ~4x the FLOPs per watt vs Hopper. This is not iteration. This is a generational compute leap. The margin expansion story for <span class="ticker-mention">$NVDA</span> is just getting started.</div>
+          <div class="tweet-signal mapped">📌 Mapped → NVDA · AI Infrastructure thesis</div>
+        </div>
+        <div class="tweet-card">
+          <div class="tweet-header">
+            <div class="tweet-avatar">C</div>
+            <div>
+              <div class="tweet-name">Chamath Palihapitiya</div>
+              <div class="tweet-handle">@chamath</div>
+            </div>
+            <div class="tweet-time">6h ago</div>
+          </div>
+          <div class="tweet-body">Rate pivot + AI capex supercycle simultaneously. The last time both vectors aligned was 2009. Growth investors who waited on the sidelines are going to look back at this window for a long time.</div>
+          <div class="tweet-signal mapped">📌 Mapped → Rate Cycle + AI Infrastructure thesis</div>
+        </div>
+        <div class="tweet-card">
+          <div class="tweet-header">
+            <div class="tweet-avatar">F</div>
+            <div>
+              <div class="tweet-name">Federal Reserve</div>
+              <div class="tweet-handle">@federalreserve</div>
+            </div>
+            <div class="tweet-time">8h ago</div>
+          </div>
+          <div class="tweet-body">Chair Powell: "The Committee remains data-dependent but sees a path to policy normalization in the second half of 2026, consistent with the dual mandate."</div>
+          <div class="tweet-signal mapped">📌 Mapped → Rate Cycle thesis · JPM, MSFT exposure</div>
+        </div>
+        <div class="tweet-card">
+          <div class="tweet-header">
+            <div class="tweet-avatar">S</div>
+            <div>
+              <div class="tweet-name">Satya Nadella</div>
+              <div class="tweet-handle">@satyanadella</div>
+            </div>
+            <div class="tweet-time">11h ago</div>
+          </div>
+          <div class="tweet-body">Copilot daily active users crossed 100M. Enterprise adoption is accelerating across every vertical we serve. The infrastructure buildout is demand-driven, not speculative.</div>
+          <div class="tweet-signal mapped">📌 Mapped → MSFT · AI Infrastructure thesis</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══ THE PROBLEM ═══ -->
+<section class="ritual-section">
+  <div class="ritual-grid">
+    <div class="fade-up">
+      <div class="ritual-label">The Problem</div>
+      <h2 class="ritual-headline">You read for hours.<br/>You act on <em>four things.</em></h2>
+      <div class="ritual-body">
+        <p>You have a ritual — coffee, FT, Bloomberg, earnings releases, Fed watch, sector notes. Plus now X, because that's where the real-time edge lives. You do it because building good investment theses requires good information.</p>
+        <p>The problem isn't your commitment. It's that 95% of what you read today has nothing to do with the positions you hold or the convictions you're building. DeepSignal doesn't replace your thinking. <strong style="color:var(--paper)">It replaces your filtering.</strong></p>
+      </div>
+    </div>
+    <div class="fade-up">
+      <div class="before-after">
+        <div class="ba-col before">
+          <div class="ba-title">Without DeepSignal</div>
+          <div class="ba-item">45–90 min morning reading across 6+ sources</div>
+          <div class="ba-item">Doomscrolling X hoping to catch something relevant</div>
+          <div class="ba-item">Generic market commentary, not your thesis</div>
+          <div class="ba-item">Earnings surprises missed pre-market</div>
+          <div class="ba-item">Fed language filtered by media, not you</div>
+          <div class="ba-item">Sector moves noticed after the fact</div>
+          <div class="ba-item">Informal signals lost in the noise</div>
+        </div>
+        <div class="ba-col after">
+          <div class="ba-title">With DeepSignal</div>
+          <div class="ba-item">90-second brief combining formal + X signal</div>
+          <div class="ba-item">120+ curated X accounts filtered to your thesis</div>
+          <div class="ba-item">Every signal mapped to your holdings</div>
+          <div class="ba-item">Earnings digested before market open</div>
+          <div class="ba-item">Fed language analyzed for your context</div>
+          <div class="ba-item">Sector rotations flagged proactively</div>
+          <div class="ba-item">High-engagement informal signals captured</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ COVERAGE ═══ -->
+<section class="coverage-section">
+  <div class="section-label">What we monitor</div>
+  <h2 class="section-title">Every source serious investors<br/>read — formal and informal</h2>
+  <p class="section-deck">DeepSignal now monitors the full intelligence stack: structured financial data plus the unstructured, real-time signal layer where markets increasingly move first.</p>
+
+  <div class="coverage-grid">
+    <div class="coverage-card fade-up">
+      <div class="coverage-card-icon">📊</div>
+      <div class="coverage-card-cat">Earnings Intelligence</div>
+      <div class="coverage-card-title">Earnings & Guidance</div>
+      <div class="coverage-card-desc">Pre-market earnings, EPS beats/misses, management guidance, analyst revisions, and conference call highlights — synthesized before you see the headline.</div>
+      <div class="coverage-card-examples">
+        <span class="example-chip">EPS vs estimates</span><span class="example-chip">Forward guidance</span><span class="example-chip">Analyst upgrades</span>
+      </div>
+    </div>
+    <div class="coverage-card x-card fade-up">
+      <div class="coverage-card-icon">𝕏</div>
+      <div class="coverage-card-cat">X / Twitter Signal</div>
+      <div class="coverage-card-title">Informal Market Intelligence</div>
+      <div class="coverage-card-desc">Curated X/Twitter feeds from investors, analysts, founders, and central bankers — filtered by engagement quality, relevance to your tickers, and thesis alignment.</div>
+      <div class="coverage-card-examples">
+        <span class="example-chip x-chip">@karpathy</span><span class="example-chip x-chip">@chamath</span><span class="example-chip x-chip">CEOs & CFOs</span><span class="example-chip x-chip">Source Packs</span>
+      </div>
+    </div>
+    <div class="coverage-card fade-up">
+      <div class="coverage-card-icon">🏛</div>
+      <div class="coverage-card-cat">Monetary Policy</div>
+      <div class="coverage-card-title">Fed & Central Banks</div>
+      <div class="coverage-card-desc">FOMC minutes, Fed speaker commentary, rate decision analysis, and global central bank signals — translated into what they mean for your specific holdings.</div>
+      <div class="coverage-card-examples">
+        <span class="example-chip">FOMC minutes</span><span class="example-chip">Dot plot shifts</span><span class="example-chip">ECB / BOJ</span>
+      </div>
+    </div>
+    <div class="coverage-card fade-up">
+      <div class="coverage-card-icon">🗞</div>
+      <div class="coverage-card-cat">Company Intelligence</div>
+      <div class="coverage-card-title">Company News</div>
+      <div class="coverage-card-desc">Product launches, regulatory actions, M&A activity, insider trades, and leadership changes — filtered to only the companies on your watchlist.</div>
+      <div class="coverage-card-examples">
+        <span class="example-chip">SEC filings</span><span class="example-chip">M&A signals</span><span class="example-chip">Insider activity</span>
+      </div>
+    </div>
+    <div class="coverage-card fade-up">
+      <div class="coverage-card-icon">📈</div>
+      <div class="coverage-card-cat">Economic Data</div>
+      <div class="coverage-card-title">Macro Indicators</div>
+      <div class="coverage-card-desc">CPI, PCE, NFP, PMI, GDP revisions — not just the numbers, but what they mean for your thesis: growth vs. value, duration, cyclicals vs. defensives.</div>
+      <div class="coverage-card-examples">
+        <span class="example-chip">CPI / PCE</span><span class="example-chip">Jobs data</span><span class="example-chip">GDP revisions</span>
+      </div>
+    </div>
+    <div class="coverage-card x-card fade-up">
+      <div class="coverage-card-icon">🔴</div>
+      <div class="coverage-card-cat">Informal Sources</div>
+      <div class="coverage-card-title">Reddit, HackerNews & More</div>
+      <div class="coverage-card-desc">High-signal communities where retail sentiment, early product feedback, and technical conviction form before they reach mainstream media. Filtered ruthlessly.</div>
+      <div class="coverage-card-examples">
+        <span class="example-chip x-chip">Reddit r/investing</span><span class="example-chip x-chip">HackerNews</span><span class="example-chip x-chip">RSS feeds</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ DIGEST FREQUENCY ═══ -->
+<section class="digest-section">
+  <div class="section-label">Digest Frequency</div>
+  <h2 class="section-title">Not just a morning brief.<br/>Intelligence on your schedule.</h2>
+  <p class="section-deck">Markets move at different speeds. So does DeepSignal — with four digest frequencies designed for how serious investors actually work.</p>
+
+  <div class="digest-grid">
+    <div class="digest-card featured fade-up">
+      <div class="digest-freq">4H</div>
+      <div class="digest-name">Real-Time Brief</div>
+      <div class="digest-desc">Four-hourly snapshots catching earnings surprises, Fed commentary, and high-velocity X signals as they break during market hours.</div>
+      <div class="digest-when">⏱ Every 4 hours · Market hours</div>
+    </div>
+    <div class="digest-card fade-up">
+      <div class="digest-freq">Daily</div>
+      <div class="digest-name">Morning Brief</div>
+      <div class="digest-desc">The full-picture brief delivered before market open. Formal news + X signal + thesis analysis + portfolio signal verdict.</div>
+      <div class="digest-when">⏱ 6:45 AM daily</div>
+    </div>
+    <div class="digest-card fade-up">
+      <div class="digest-freq">Weekly</div>
+      <div class="digest-name">Week in Review</div>
+      <div class="digest-desc">A deeper synthesis of the week's signals — thesis drift analysis, portfolio signal trends, and what to watch in the week ahead.</div>
+      <div class="digest-when">⏱ Sunday 8 AM</div>
+    </div>
+    <div class="digest-card fade-up">
+      <div class="digest-freq">Monthly</div>
+      <div class="digest-name">Thesis Report</div>
+      <div class="digest-desc">A comprehensive look at how your investment theses performed, what signals mattered, and how your portfolio conviction has evolved.</div>
+      <div class="digest-when">⏱ 1st of each month</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PROCESS ═══ -->
+<section class="process-section">
+  <div class="section-label">The Process</div>
+  <h2 class="section-title">From raw world — formal<br/>and informal — to your brief</h2>
+  <p class="section-deck">Six steps. Fully automated. Formal sources and X signal, synthesized together.</p>
+
+  <div class="process-flow">
+    <div class="process-step fade-up">
+      <div class="process-node">I</div>
+      <div class="process-step-title">Ingest</div>
+      <div class="process-step-desc">800+ sources: news wires, SEC filings, central bank feeds, macro data, RSS, Reddit, HackerNews — and 120+ curated X accounts.</div>
+      <div class="process-step-tag">All sources</div>
+    </div>
+    <div class="process-step fade-up">
+      <div class="process-node">II</div>
+      <div class="process-step-title">Profile</div>
+      <div class="process-step-desc">Your watchlist, thesis tags, X Source Packs, and depth preferences act as a personal editorial filter across all sources.</div>
+      <div class="process-step-tag">Your lens</div>
+    </div>
+    <div class="process-step fade-up">
+      <div class="process-node">III</div>
+      <div class="process-step-title">Curate</div>
+      <div class="process-step-desc">Configurable curation rules filter noise — engagement thresholds on X, credibility scoring, duplicate removal across formal and informal signals.</div>
+      <div class="process-step-tag">Smart filter</div>
+    </div>
+    <div class="process-step fade-up">
+      <div class="process-node">IV</div>
+      <div class="process-step-title">Reason</div>
+      <div class="process-step-desc">AI acts as a senior analyst — reasoning about how each formal or informal signal connects to your positions and thesis, not just summarising.</div>
+      <div class="process-step-tag">AI analysis</div>
+    </div>
+    <div class="process-step fade-up">
+      <div class="process-node">V</div>
+      <div class="process-step-title">Deliver</div>
+      <div class="process-step-desc">A beautifully formatted brief lands in your inbox on your chosen schedule — 4H, daily, weekly, or monthly. Also available as RSS or JSON feed.</div>
+      <div class="process-step-tag">Your inbox</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PERSONALIZATION ═══ -->
+<section class="personal-section">
+  <div class="personal-grid">
+    <div class="fade-up">
+      <div class="personal-label">Built Around You</div>
+      <h2 class="personal-headline">Your brief gets <em>smarter</em><br/>the more it knows you —<br/>and who you follow</h2>
+      <div class="personal-body">
+        <p>Tell DeepSignal your watchlist, your thesis keywords, and your preferred X Source Packs. It builds a personal intelligence profile that gets sharper every week.</p>
+        <p>Set your coverage depth per category — want deep macro analysis but light company news? Done. Want X signal heavily weighted for your AI infra thesis? Configure it.</p>
+        <p>Every briefing reads as if it was written specifically for you, drawing on both structured financial data and the informal conversations happening in real time on X.</p>
+      </div>
+    </div>
+
+    <div class="fade-up">
+      <div class="pref-card">
+        <div class="pref-card-title">Your Intelligence Profile</div>
+        <div class="pref-section">
+          <div class="pref-section-label">Watchlist Tickers</div>
+          <div class="pref-tags">
+            <span class="pref-tag active">AAPL</span><span class="pref-tag active">NVDA</span><span class="pref-tag active">MSFT</span><span class="pref-tag active">JPM</span><span class="pref-tag inactive">+ Add</span>
+          </div>
+        </div>
+        <div class="pref-divider"></div>
+        <div class="pref-section">
+          <div class="pref-section-label">Investment Thesis Tags</div>
+          <div class="pref-tags">
+            <span class="pref-tag active">AI Infrastructure</span><span class="pref-tag active">Rate Cycle</span><span class="pref-tag active">Semiconductors</span><span class="pref-tag inactive">+ Add</span>
+          </div>
+        </div>
+        <div class="pref-divider"></div>
+        <div class="pref-section">
+          <div class="pref-section-label">𝕏 Source Packs Active</div>
+          <div class="pref-tags">
+            <span class="pref-tag x-active">AI & Tech Investors</span><span class="pref-tag x-active">Macro Watchers</span><span class="pref-tag inactive">+ Add Pack</span>
+          </div>
+        </div>
+        <div class="pref-divider"></div>
+        <div class="pref-section">
+          <div class="pref-section-label">Coverage Depth — Macro</div>
+          <div class="pref-slider-row"><span class="pref-slider-label">Surface</span><span class="pref-slider-val">Deep ●</span></div>
+          <div class="fake-slider"><div class="fake-slider-fill" style="width:80%"></div><div class="fake-slider-thumb" style="left:76%"></div></div>
+          <div class="pref-section-label">𝕏 Signal Weight</div>
+          <div class="pref-slider-row"><span class="pref-slider-label">Low</span><span class="pref-slider-val">High ●</span></div>
+          <div class="fake-slider"><div class="fake-slider-fill" style="width:70%"></div><div class="fake-slider-thumb" style="left:66%"></div></div>
+        </div>
+        <div class="pref-brief-preview">
+          <div class="pref-brief-preview-label">Today's brief will include</div>
+          <div class="pref-brief-line"><span class="pbl-tick">NVDA</span> Earnings + @karpathy X signal mapped</div>
+          <div class="pref-brief-line"><span class="pbl-tick x">𝕏</span> @chamath macro thread → rate cycle thesis</div>
+          <div class="pref-brief-line"><span class="pbl-tick">FED</span> Powell statement → JPM rate sensitivity</div>
+          <div class="pref-brief-line"><span class="pbl-tick">SEMI</span> SOX sector momentum signal</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ MARK & DEEP DIVE ═══ -->
+<section class="mark-section">
+  <div class="mark-grid">
+    <div class="fade-up">
+      <div class="mark-label">Mark & Deep Dive</div>
+      <h2 class="mark-headline">Bookmark anything.<br/>Let AI go <em>deeper</em> on demand.</h2>
+      <div class="mark-body">
+        <p>When a story or X post catches your eye — earnings call transcript, a regulatory filing, a thread from an analyst you trust — hit Mark to bookmark it.</p>
+        <p>DeepSignal's Deep Dive feature then runs a full AI analysis on that specific item: how it connects to your thesis, what the market might be missing, what questions you should be asking before acting.</p>
+        <p>It's the difference between having a brilliant analyst and having a brilliant analyst who does the heavy lifting the moment you ask.</p>
+      </div>
+    </div>
+
+    <div class="fade-up">
+      <div class="mark-mockup">
+        <div class="mark-mockup-header">
+          <div class="mark-mockup-title">📌 Your Marked Items</div>
+          <div class="mark-mockup-count">3 items · Deep Dive ready</div>
+        </div>
+        <div class="mark-item">
+          <div class="mark-icon">📊</div>
+          <div style="flex:1;">
+            <div class="mark-item-title">NVDA Q4 Earnings Call — CFO remarks on datacenter margin trajectory</div>
+            <div class="mark-item-meta">Earnings · Marked 2h ago</div>
+            <div class="mark-item-analysis">AI analysis: CFO's language on pricing power shifted from "stable" to "expanding" — a subtle but meaningful upgrade. Relevant to your 24-month NVDA price target thesis.</div>
+          </div>
+          <div class="dive-badge">Deep Dive →</div>
+        </div>
+        <div class="mark-item">
+          <div class="mark-icon">𝕏</div>
+          <div style="flex:1;">
+            <div class="mark-item-title">@karpathy: Full thread on Blackwell architecture and inference economics</div>
+            <div class="mark-item-meta">X Signal · Marked 4h ago · 47K engagements</div>
+            <div class="mark-item-analysis">AI analysis: Karpathy's technical framing implies NVDA's inference revenue could 3x Hopper at similar or better margins. Key supporting data for AI infra thesis.</div>
+          </div>
+          <div class="dive-badge">Deep Dive →</div>
+        </div>
+        <div class="mark-item" style="border-bottom:none;">
+          <div class="mark-icon">🏛</div>
+          <div style="flex:1;">
+            <div class="mark-item-title">FOMC Minutes — Specific paragraph on neutral rate estimates shifting lower</div>
+            <div class="mark-item-meta">Fed Watch · Marked 6h ago</div>
+            <div class="mark-item-analysis">AI analysis: The committee's implied r* has moved from 2.5% to ~2.1%. This is the structural tailwind for long-duration assets your rate cycle thesis is built on.</div>
+          </div>
+          <div class="dive-badge">Deep Dive →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TESTIMONIALS ═══ -->
+<section class="testimony-section">
+  <div class="section-label">From our readers</div>
+  <h2 class="section-title">What serious investors say</h2>
+  <div class="testimony-grid">
+    <div class="testimony fade-up">
+      <div class="testimony-mark">"</div>
+      <p class="testimony-quote">I used to spend 45 minutes on Bloomberg and another 30 scrolling X every morning. DeepSignal gives me the same four things I actually act on — but now the X signal is in there too, mapped to my positions. It's uncanny.</p>
+      <div class="testimony-rule"></div>
+      <div class="testimony-meta"><strong>Marcus T.</strong><span>Self-directed investor · 14-stock conviction portfolio</span></div>
+    </div>
+    <div class="testimony fade-up">
+      <div class="testimony-mark">"</div>
+      <p class="testimony-quote">The @karpathy thread mapping to my NVDA thesis in the same brief as the earnings release — with an AI explanation of why both signals point the same direction — that's something I couldn't have built myself in half a day.</p>
+      <div class="testimony-rule"></div>
+      <div class="testimony-meta"><strong>Priya S.</strong><span>Options trader · Growth & tech focused</span></div>
+    </div>
+    <div class="testimony fade-up">
+      <div class="testimony-mark">"</div>
+      <p class="testimony-quote">The Mark & Deep Dive feature is where I get real edge. I marked a CFO's unusual phrasing, ran a deep dive, and it surfaced a margin signal three weeks before the analyst community caught it. For $5 a month that's extraordinary.</p>
+      <div class="testimony-rule"></div>
+      <div class="testimony-meta"><strong>David L.</strong><span>Former buy-side analyst, now independent</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PRICING ═══ -->
+<section class="pricing-section" id="pricing">
+  <div class="section-label">Subscription</div>
+  <h2 class="section-title">The cost of one trade<br/>commission. Every month.</h2>
+  <p class="section-deck">Bloomberg Terminal: $24,000/year. Private research desk: $50,000+/year. DeepSignal: starts at a dollar.</p>
+
+  <div class="pricing-cards">
+    <div class="price-card">
+      <span class="price-period-label">First 30 days</span>
+      <div class="price-amount"><span class="dollar">$</span>1</div>
+      <div class="price-sub-label">one-time intro · full access</div>
+      <div class="price-divider"></div>
+      <ul class="price-features">
+        <li>Full personalization — watchlist, thesis tags, X Source Packs</li>
+        <li>Daily brief + 4H real-time signal during trial</li>
+        <li>800+ sources including X/Twitter signal layer</li>
+        <li>Mark & Deep Dive on any story or X post</li>
+        <li>Cancel before 30 days — pay nothing more</li>
+      </ul>
+    </div>
+    <div class="price-card featured">
+      <span class="price-period-label">After 30 days</span>
+      <div class="price-amount"><span class="dollar">$</span>5</div>
+      <div class="price-sub-label">per month · cancel anytime</div>
+      <div class="price-divider"></div>
+      <ul class="price-features">
+        <li>All four digest frequencies — 4H, daily, weekly, monthly</li>
+        <li>X signal layer with curated Source Packs</li>
+        <li>Unlimited Mark & Deep Dive analysis</li>
+        <li>Thesis signal history and trend tracking</li>
+        <li>RSS/JSON feed for your digest</li>
+        <li>Your profile learns and improves over time</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="pricing-footer">
+    <div class="pricing-footer-note">Powered by Stripe · Secure checkout · No hidden fees</div>
+    <a class="btn-primary" href="#" style="padding:15px 38px;font-size:15px;">Start reading smarter — $1 →</a>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">Deep<span>Signal</span></div>
+      <div class="footer-tagline">Your private analyst. Every morning.</div>
+      <p class="footer-disc">DeepSignal is an AI-powered information service and does not constitute financial or investment advice. All content is for informational purposes only. Past signals do not guarantee future performance. Always conduct your own due diligence before making investment decisions. Not affiliated with any brokerage, exchange, or financial institution.</p>
+      <p class="footer-powered">Intelligence engine powered by <a href="https://github.com/kevinho/clawfeed">ClawFeed</a> · MIT License</p>
+    </div>
+    <div class="footer-links">
+      <a class="footer-link" href="#">Privacy Policy</a>
+      <a class="footer-link" href="#">Terms of Service</a>
+      <a class="footer-link" href="#">Contact</a>
+      <a class="footer-link" href="#">Manage Subscription</a>
+      <a class="footer-link" href="#">RSS / JSON Feed</a>
+    </div>
+  </div>
+  <div class="footer-copy">© 2026 DeepSignal · All rights reserved · Built on ClawFeed (MIT)</div>
+</footer>
+
+<script>
+  // Live date
+  const el = document.getElementById('live-date');
+  if (el) el.textContent = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  // Frequency tab switcher
+  document.querySelectorAll('.freq-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.freq-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+    });
+  });
+
+  // Scroll fade-up
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.fade-up:not(.visible)').forEach(el => obs.observe(el));
+</script>
+
+</body>
+</html>
